@@ -26,11 +26,24 @@ class ResponseFormatter:
         }
 
     def format_error_response(self, code: str, message: str, details: Dict[str, Any] | None = None) -> Dict[str, Any]:
+        tips: Dict[str, Any] = {}
+        url = (details or {}).get("url") if isinstance(details, dict) else None
+        if code in {"INVALID_URL", "FETCH_ERROR"} and isinstance(url, str):
+            if url.lower().startswith("file://") or ":\\" in url or url.startswith("/"):
+                tips["try_file_url"] = "Use a file:// URL with forward slashes, e.g. file:///C:/path/to/image.jpg"
+                tips["allow_fs_root_env"] = "Set IMAGE_SAGE_ALLOWED_FS_ROOTS to include the folder, e.g. C:\\Users\\You\\Desktop"
+            else:
+                tips["http_https_only"] = "Ensure the URL uses http or https and is publicly reachable (no private IPs)."
+        if code == "FETCH_ERROR":
+            tips["size_limit_mb"] = "Image may exceed size limit. Adjust IMAGE_SAGE_MAX_MB if needed."
+        if code == "PROCESSING_ERROR":
+            tips["try_model"] = "Try a different OPENROUTER_MODEL if the provider rejects data URLs."
         return {
             "error": {
                 "code": code,
                 "message": message,
                 "details": details or {},
+                "tips": tips,
             }
         }
 

@@ -4,7 +4,8 @@ import ipaddress
 import os
 import socket
 from dataclasses import dataclass
-from typing import Optional
+from typing import List, Optional
+import re
 from urllib.parse import urlparse
 
 
@@ -24,6 +25,12 @@ class ValidationResult:
 
 
 class URLValidator:
+    def __init__(self, allowed_roots: Optional[List[str]] = None) -> None:
+        self.allowed_roots = allowed_roots or []
+
+    def _is_windows_drive_path(self, url: str) -> bool:
+        return bool(re.match(r"^[a-zA-Z]:[\\/]", url))
+
     def validate_url(self, url: str) -> ValidationResult:
         parsed = urlparse(url)
         if parsed.scheme in {"http", "https"}:
@@ -32,9 +39,9 @@ class URLValidator:
             if not self.is_safe_url(url):
                 return ValidationResult(False, "URL points to a private or unsafe address")
             return ValidationResult(True)
-        elif parsed.scheme == "file" or (parsed.scheme == "" and (url.startswith("/") or ":\\" in url)):
+        elif parsed.scheme == "file" or self._is_windows_drive_path(url) or (parsed.scheme == "" and url.startswith("/")):
             path = parsed.path if parsed.scheme == "file" else url
-            if not self.check_file_permissions(path):
+            if not self.check_file_permissions(path, allowed_roots=self.allowed_roots):
                 return ValidationResult(False, "File access denied or path invalid")
             return ValidationResult(True)
         else:
@@ -59,12 +66,16 @@ class URLValidator:
                 return False
         return True
 
-    def check_file_permissions(self, path: str) -> bool:
-        # Restrict to current working directory subtree by default
+    def check_file_permissions(self, path: str, allowed_roots: Optional[List[str]] = None) -> bool:
+        # Restrict to current working directory subtree by default; allow configurable roots
         try:
             abs_path = os.path.abspath(path)
             cwd = os.path.abspath(os.getcwd())
-            return abs_path.startswith(cwd) and os.path.exists(abs_path) and os.path.isfile(abs_path)
+            roots = [cwd]
+            if allowed_roots:
+                roots.extend([os.path.abspath(r) for r in allowed_roots])
+            in_allowed = any(abs_path.startswith(r + os.sep) or abs_path == r for r in roots)
+            return in_allowed and os.path.exists(abs_path) and os.path.isfile(abs_path)
         except Exception:
             return False
 

@@ -41,7 +41,7 @@ TOOL_SCHEMA: Dict[str, Any] = {
 async def _handle_image_sage(url: str, options: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     config = load_config()
 
-    validator = URLValidator()
+    validator = URLValidator(allowed_roots=config.allowed_fs_roots)
     # Temporarily extend allowed roots from config for local files
     vr = validator.validate_url(url)
     if not vr.ok:
