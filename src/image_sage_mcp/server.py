@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import asyncio
 from typing import Any, Dict, Optional
+import os
+import sys
 
 from .config import load_config
 from .fetcher import ImageFetcher
@@ -85,6 +87,10 @@ def main() -> None:
             "The 'mcp' package is required. Install with: pip install mcp"
         )
 
+    if os.getenv("IMAGE_SAGE_DEBUG", ""):  # basic startup signal to stderr
+        sys.stderr.write(f"[image-sage-mcp] starting (pid={os.getpid()})\n")
+        sys.stderr.flush()
+
     mcp = FastMCP("image-sage-mcp")
 
     @mcp.tool(
@@ -92,6 +98,9 @@ def main() -> None:
         description=TOOL_SCHEMA["description"],
     )
     async def image_sage(url: str, options: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:  # noqa: D401
+        if os.getenv("IMAGE_SAGE_DEBUG", ""):
+            sys.stderr.write(f"[image-sage-mcp] tool call: url={url}\n")
+            sys.stderr.flush()
         return await _handle_image_sage(url, options)
 
     mcp.run()
