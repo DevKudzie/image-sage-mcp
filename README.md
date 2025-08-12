@@ -1,0 +1,145 @@
+# Image Sage MCP — give your agent eyes for images
+
+An MCP (Model Context Protocol) server that provides a single tool, `Image Sage`, for analyzing images from URLs or local file paths and returning structured results.
+
+## Features
+- URL and local file support with SSRF and file-access safeguards
+- Image format validation (JPEG, PNG, GIF, WebP)
+- Pluggable vision backends (OpenAI, Anthropic, HuggingFace/local) with graceful fallback
+- Structured response including object list, person detection, OCR text, scene type, metadata
+
+## Quick start (Windows PowerShell)
+
+1. Create and activate a virtual environment:
+```powershell
+python -m venv .venv
+. .venv\Scripts\Activate.ps1
+```
+
+2. Install the package in editable mode:
+```powershell
+pip install -e .
+```
+
+3. (Optional) Install vision extras:
+```powershell
+pip install -e .[vision]
+```
+
+4. Set API keys if using cloud backends:
+```powershell
+$env:OPENAI_API_KEY = "sk-..."
+$env:ANTHROPIC_API_KEY = "anthropic-..."
+$env:OPENROUTER_API_KEY = "or-..."
+$env:OPENROUTER_MODEL = "openai/gpt-4o-mini"  # e.g. 'anthropic/claude-3.5-sonnet'
+```
+
+5. Run the server:
+```powershell
+image-sage-mcp
+```
+
+The server will expose the `Image Sage` tool to your MCP-compatible client/editor.
+
+## Tool schema
+The tool accepts:
+```json
+{
+  "url": "string (http/https/file path)",
+  "options": {
+    "include_ocr": true,
+    "detail_level": "low|medium|high"
+  }
+}
+```
+
+## Development
+- Run unit tests (placeholder):
+```powershell
+pytest
+```
+
+## Notes
+- Torch install on Windows may require CUDA/CPU-specific builds. The server works without local models; cloud backends are optional.
+- For PowerShell, use separate commands rather than `&&` chaining.
+
+## How to test locally
+
+### Quick smoke test (no IDE)
+- Invoke the handler directly and print a result:
+```powershell
+python -c "import asyncio;from image_sage_mcp.server import _handle_image_sage;print(asyncio.run(_handle_image_sage('https://upload.wikimedia.org/wikipedia/commons/9/99/Sample_User_Icon.png')))"
+```
+
+### Run the MCP server
+```powershell
+image-sage-mcp
+```
+If you want to exercise the server without an IDE, you can use any MCP client/inspector to call the `Image Sage` tool with an argument like:
+```json
+{ "url": "https://example.com/image.jpg", "options": { "include_ocr": true, "detail_level": "medium" } }
+```
+
+## Install in IDEs (MCP clients)
+
+### Cursor
+Add a server entry to your `~/.cursor/mcp.json` (Windows: `C:\Users\<You>\.cursor\mcp.json`). Example:
+```json
+{
+  "servers": {
+    "image-sage": {
+      "command": "image-sage-mcp",
+      "args": [],
+      "env": {
+        "OPENROUTER_API_KEY": "or-...",
+        "OPENROUTER_MODEL": "openai/gpt-4o-mini"
+      }
+    }
+  }
+}
+```
+Restart Cursor. The `Image Sage` tool will be discoverable and callable by the IDE’s agent.
+
+### Claude Desktop (or other MCP-compatible apps)
+Add a server entry in the app’s MCP configuration with the same shape as above: `command` set to `image-sage-mcp` and (optional) `env` vars for your model/provider.
+
+## Deploying
+
+This server runs over stdio; “deployment” typically means installing it where your MCP client runs.
+
+- Local workstation (recommended):
+  - Install via pip (editable or published package) and reference `image-sage-mcp` as the command in your MCP config.
+
+- System-wide install (admin shell):
+```powershell
+pip install image-sage-mcp
+```
+Then reference `image-sage-mcp` in your MCP config (same as above).
+
+- PyPI (optional):
+  - Build and publish if you want others to install with `pip install image-sage-mcp`.
+  - Example:
+```powershell
+python -m build
+python -m twine upload dist/*
+```
+
+Note: Containerizing is possible, but most MCP clients expect stdio processes. If you containerize, you’ll need a wrapper that bridges stdio to your client, which is IDE‑specific.
+
+## Backend: OpenRouter (detailed)
+
+- Set env vars:
+```powershell
+$env:OPENROUTER_API_KEY = "or-..."
+$env:OPENROUTER_MODEL = "openai/gpt-4o-mini"  # alternatives: 'anthropic/claude-3.5-sonnet', 'google/gemini-1.5-flash'
+```
+- The backend sends a JSON-structured request to the model with the image embedded as a base64 data URL. Some models prefer remote `image_url` links; if a model returns an error, switch to a different model via `OPENROUTER_MODEL`.
+- Returned content is parsed as JSON with keys: `contains_person`, `objects_detected`, `scene_type`, `ocr_text`, `confidence`.
+
+## Contributing / Public MCP
+
+This is a public MCP server. Any MCP-compatible model/client can use it, and contributions are welcome.
+
+- Issues/PRs: provide clear repro steps and describe the model/provider used.
+- Style: follow the code style in the repo, keep functions small and readable, add tests for new logic.
+- Security: don’t weaken SSRF/file-access protections. Add tests for security-sensitive changes.
