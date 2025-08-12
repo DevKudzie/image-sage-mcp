@@ -22,6 +22,9 @@ def load_config() -> ServerConfig:
     cache_ttl_seconds = int(os.getenv("IMAGE_SAGE_CACHE_TTL", "3600"))
     log_level = os.getenv("IMAGE_SAGE_LOG", "INFO")
 
+    roots_env = os.getenv("IMAGE_SAGE_ALLOWED_FS_ROOTS", "").strip()
+    allowed_fs_roots = [p.strip() for p in roots_env.split(";") if p.strip()] if roots_env else []
+
     return ServerConfig(
         vision_backends=[b.strip() for b in vision_backends if b.strip()],
         api_keys=api_keys,
@@ -31,6 +34,7 @@ def load_config() -> ServerConfig:
         cache_ttl_seconds=cache_ttl_seconds,
         log_level=log_level,
         openrouter_model=os.getenv("OPENROUTER_MODEL", "openai/gpt-4o-mini"),
+        allowed_fs_roots=allowed_fs_roots,
     )
 
 

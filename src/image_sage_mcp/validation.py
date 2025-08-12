@@ -4,7 +4,7 @@ import ipaddress
 import os
 import socket
 from dataclasses import dataclass
-from typing import Optional
+from typing import List, Optional
 from urllib.parse import urlparse
 
 
@@ -59,12 +59,16 @@ class URLValidator:
                 return False
         return True
 
-    def check_file_permissions(self, path: str) -> bool:
-        # Restrict to current working directory subtree by default
+    def check_file_permissions(self, path: str, allowed_roots: Optional[List[str]] = None) -> bool:
+        # Restrict to current working directory subtree by default; allow configurable roots
         try:
             abs_path = os.path.abspath(path)
             cwd = os.path.abspath(os.getcwd())
-            return abs_path.startswith(cwd) and os.path.exists(abs_path) and os.path.isfile(abs_path)
+            roots = [cwd]
+            if allowed_roots:
+                roots.extend([os.path.abspath(r) for r in allowed_roots])
+            in_allowed = any(abs_path.startswith(r + os.sep) or abs_path == r for r in roots)
+            return in_allowed and os.path.exists(abs_path) and os.path.isfile(abs_path)
         except Exception:
             return False
 

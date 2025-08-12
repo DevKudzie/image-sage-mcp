@@ -36,6 +36,7 @@ class ServerConfig:
     cache_ttl_seconds: int = 3600
     log_level: str = "INFO"
     openrouter_model: str = "openai/gpt-4o-mini"
+    allowed_fs_roots: List[str] = None  # set at load time
 
 
 @dataclass
