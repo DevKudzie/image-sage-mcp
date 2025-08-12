@@ -11,6 +11,7 @@ class ResponseFormatter:
             "contains_person": analysis.contains_person,
             "objects_detected": analysis.objects_detected,
             "scene_type": analysis.scene_type,
+            "description": analysis.description,
             "ocr_text": analysis.ocr_text,
             "confidence": analysis.confidence,
             "metadata": {

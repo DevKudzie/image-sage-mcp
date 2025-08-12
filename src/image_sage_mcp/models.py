@@ -18,6 +18,7 @@ class AnalysisResult:
     contains_person: bool
     objects_detected: List[str]
     scene_type: str
+    description: str
     ocr_text: str
     confidence: float
     metadata: ImageMetadata

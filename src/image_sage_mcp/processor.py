@@ -25,6 +25,7 @@ class StubBackend(VisionBackend):
         contains_person = False
         objects_detected: List[str] = []
         scene_type = "unknown"
+        description = ""
         ocr_text = ""
         confidence = 0.25
         meta = ImageMetadata(
@@ -39,6 +40,7 @@ class StubBackend(VisionBackend):
             contains_person=contains_person,
             objects_detected=objects_detected,
             scene_type=scene_type,
+            description=description,
             ocr_text=ocr_text,
             confidence=confidence,
             metadata=meta,
@@ -88,7 +90,7 @@ class OpenRouterBackend(VisionBackend):
         system_prompt = (
             "You are an image analysis engine. Return only a compact JSON object with keys: "
             "contains_person (bool), objects_detected (array of strings), scene_type (string), "
-            "ocr_text (string), confidence (0..1)."
+            "description (string, a concise natural language summary), ocr_text (string), confidence (0..1)."
         )
         user_prompt = (
             f"Analyze the image with {detail_level} detail. "
@@ -139,6 +141,7 @@ class OpenRouterBackend(VisionBackend):
         contains_person = bool(parsed.get("contains_person", False))
         objects_detected = list(parsed.get("objects_detected", []))
         scene_type = str(parsed.get("scene_type", "unknown"))
+        description = str(parsed.get("description", ""))
         ocr_text = str(parsed.get("ocr_text", ""))
         confidence = float(parsed.get("confidence", 0.5))
 
@@ -155,6 +158,7 @@ class OpenRouterBackend(VisionBackend):
             contains_person=contains_person,
             objects_detected=objects_detected,
             scene_type=scene_type,
+            description=description,
             ocr_text=ocr_text,
             confidence=confidence,
             metadata=meta,
