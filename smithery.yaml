@@ -1,0 +1,13 @@
+version: 1
+name: image-sage-mcp
+
+build:
+  dockerfile: Dockerfile
+
+start:
+  # MCP servers are stdio processes; no port needed
+  command: ["image-sage-mcp"]
+  env:
+    # Set at deploy time or via Smithery secrets
+    OPENROUTER_MODEL: "openai/gpt-4o-mini"
+

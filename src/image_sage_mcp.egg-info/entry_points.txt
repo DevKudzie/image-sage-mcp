@@ -1,0 +1,2 @@
+[console_scripts]
+image-sage-mcp = image_sage_mcp.server:main
